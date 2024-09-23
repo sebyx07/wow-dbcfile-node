@@ -1,0 +1,1 @@
+cmd_Release/dbcfile.node := ln -f "Release/obj.target/dbcfile.node" "Release/dbcfile.node" 2>/dev/null || (rm -rf "Release/dbcfile.node" && cp -af "Release/obj.target/dbcfile.node" "Release/dbcfile.node")
