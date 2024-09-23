@@ -4,3 +4,4 @@ StormLib/
 stormlib-*.tgz
 tmp/
 lib/*
+build/

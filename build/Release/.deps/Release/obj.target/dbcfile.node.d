@@ -1,1 +1,0 @@
-cmd_Release/obj.target/dbcfile.node := g++ -o Release/obj.target/dbcfile.node -shared -pthread -rdynamic -m64  -Wl,-soname=dbcfile.node -Wl,--start-group Release/obj.target/dbcfile/ext/dbcfile.o Release/obj.target/node_modules/node-addon-api/nothing.a -Wl,--end-group 
