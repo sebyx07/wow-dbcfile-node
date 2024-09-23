@@ -11,6 +11,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "wow-dbcfile-node": "file:../wow-dbcfile-node-1.0.0.tgz"
+    "wow-dbcfile-node": "^1.0.0"
   }
 }
