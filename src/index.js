@@ -7,7 +7,6 @@ class WoWDBCFile {
   constructor(filepath, fieldDefinitions) {
     this.#validateFieldDefinitions(fieldDefinitions);
     this.dbc = new DBCFile(filepath, fieldDefinitions);
-    this.fieldDefinitions = fieldDefinitions;
     this.fieldList = Object.keys(fieldDefinitions);
   }
 
