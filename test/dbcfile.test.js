@@ -114,7 +114,7 @@ describe('WoWDBCFile', function() {
     it('writes changes to a new file', async function() {
       const newModelName = "NewModelName";
       dbcFile.updateRecord(0, 'model_name_1', newModelName);
-      dbcFile.writeTo(newFile);
+      await dbcFile.writeTo(newFile);
 
       const newDbcFile = new WoWDBCFile(newFile, fieldDefinitions);
       newDbcFile.read();

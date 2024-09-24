@@ -46,6 +46,8 @@ private:
     Napi::Value GetHeader(const Napi::CallbackInfo& info);
     Napi::Value FindBy(const Napi::CallbackInfo& info);
     Napi::Value GetFilePath(const Napi::CallbackInfo& info);
+    Napi::Value DeleteRecord(const Napi::CallbackInfo& info);
+    Napi::Value CreateRecordWithValues(const Napi::CallbackInfo& info);
 
     FieldType StringToFieldType(const std::string& type_str);
     Napi::Value FieldValueToNapi(Napi::Env env, const FieldValue& value);
@@ -72,7 +74,9 @@ Napi::Object DBCFile::Init(Napi::Env env, Napi::Object exports) {
         InstanceMethod("getRecord", &DBCFile::GetRecord),
         InstanceMethod("getHeader", &DBCFile::GetHeader),
         InstanceMethod("findBy", &DBCFile::FindBy),
-        InstanceMethod("getFilePath", &DBCFile::GetFilePath)
+        InstanceMethod("getFilePath", &DBCFile::GetFilePath),
+        InstanceMethod("deleteRecord", &DBCFile::DeleteRecord),
+        InstanceMethod("createRecordWithValues", &DBCFile::CreateRecordWithValues),
     });
 
     constructor = Napi::Persistent(func);
@@ -228,8 +232,30 @@ Napi::Value DBCFile::CreateRecord(const Napi::CallbackInfo& info) {
     std::vector<FieldValue> new_record;
 
     for (const auto& field_def : this->field_definitions) {
-        Napi::Value value = values.Get(field_def.first);
-        new_record.push_back(NapiToFieldValue(value, field_def.second));
+        FieldValue field_value;
+        field_value.type = field_def.second;
+
+        if (values.Has(field_def.first)) {
+            Napi::Value value = values.Get(field_def.first);
+            field_value = NapiToFieldValue(value, field_def.second);
+        } else {
+            // Set default value if the field is not provided
+            switch (field_def.second) {
+                case FieldType::TYPE_UINT32:
+                case FieldType::TYPE_INT32:
+                    field_value.value.uint32_value = 0;
+                    break;
+                case FieldType::TYPE_FLOAT:
+                    field_value.value.float_value = 0.0f;
+                    break;
+                case FieldType::TYPE_STRING:
+                    field_value.value.string_offset = this->string_block.size();
+                    this->string_block.push_back('\0');
+                    break;
+            }
+        }
+
+        new_record.push_back(field_value);
     }
 
     this->records.push_back(new_record);
@@ -319,7 +345,7 @@ Napi::Value DBCFile::GetHeader(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value DBCFile::WriteTo(const Napi::CallbackInfo& info) {
-    Napi::Env env = info.Env();
+Napi::Env env = info.Env();
 
     if (info.Length() < 1 || !info[0].IsString()) {
         Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
@@ -329,7 +355,11 @@ Napi::Value DBCFile::WriteTo(const Napi::CallbackInfo& info) {
     std::string new_filepath = info[0].As<Napi::String>().Utf8Value();
     std::ofstream file(new_filepath, std::ios::binary | std::ios::trunc);
     if (!file) {
-        Napi::Error::New(env, "Could not open file for writing").ThrowAsJavaScriptException();
+        if (errno == ENOENT || errno == EACCES) {
+            Napi::Error::New(env, "Invalid file path or permission denied").ThrowAsJavaScriptException();
+        } else {
+            Napi::Error::New(env, "Could not open file for writing").ThrowAsJavaScriptException();
+        }
         return env.Null();
     }
 
@@ -418,4 +448,69 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     return DBCFile::Init(env, exports);
 }
 
-NODE_API_MODULE(dbcfile, Init)
+Napi::Value DBCFile::DeleteRecord(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsNumber()) {
+        Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    uint32_t index = info[0].As<Napi::Number>().Uint32Value();
+
+    if (index >= this->records.size()) {
+        Napi::RangeError::New(env, "Invalid record index").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    this->records.erase(this->records.begin() + index);
+    this->header.record_count--;
+
+    return env.Undefined();
+}
+
+Napi::Value DBCFile::CreateRecordWithValues(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsObject()) {
+        Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    Napi::Object values = info[0].As<Napi::Object>();
+    std::vector<FieldValue> new_record;
+
+    for (const auto& field_def : this->field_definitions) {
+        FieldValue field_value;
+        field_value.type = field_def.second;
+
+        if (values.Has(field_def.first)) {
+            Napi::Value value = values.Get(field_def.first);
+            field_value = NapiToFieldValue(value, field_def.second);
+        } else {
+            // Set default value if the field is not provided
+            switch (field_def.second) {
+                case FieldType::TYPE_UINT32:
+                case FieldType::TYPE_INT32:
+                    field_value.value.uint32_value = 0;
+                    break;
+                case FieldType::TYPE_FLOAT:
+                    field_value.value.float_value = 0.0f;
+                    break;
+                case FieldType::TYPE_STRING:
+                    field_value.value.string_offset = this->string_block.size();
+                    this->string_block.push_back('\0');
+                    break;
+            }
+        }
+
+        new_record.push_back(field_value);
+    }
+
+    this->records.push_back(new_record);
+    this->header.record_count++;
+
+    return Napi::Number::New(env, this->records.size() - 1);
+}
+
+NODE_API_MODULE(dbcfile, Init);
