@@ -146,7 +146,7 @@ describe('WoWDBCFile', function() {
       const results = dbcFile.findBy('id', 32837);
       expect(results).to.be.an('array');
       expect(results).to.have.lengthOf(1);
-      expect(results[0].id).to.equal(32837);
+      expect(results[0].value.id).to.equal(32837);
     });
 
     it('returns an empty array when no matching records are found', function() {
@@ -161,7 +161,7 @@ describe('WoWDBCFile', function() {
       expect(results).to.be.an('array');
       expect(results.length).to.be.above(1);
       results.forEach(record => {
-        expect(record.class).to.equal(2);
+        expect(record.value.class).to.equal(2);
       });
     });
   });

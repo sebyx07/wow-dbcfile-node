@@ -105,7 +105,8 @@ const twoHandedWeapons = dbc.findBy('inventory_type', 17);  // 17 represents Two
 
 console.log('Two-handed weapons:');
 twoHandedWeapons.forEach(item => {
-  console.log(`Item ID: ${item.id}, Class: ${item.class}, Subclass: ${item.subclass}, Display ID: ${item.displayid}`);
+  const { value, index } = item;
+  console.log(`Item ID: ${value.id}, Class: ${value.class}, Subclass: ${value.subclass}, Display ID: ${value.displayid}`);
 });
 ```
 

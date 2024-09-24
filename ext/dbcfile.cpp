@@ -427,12 +427,17 @@ Napi::Value DBCFile::FindBy(const Napi::CallbackInfo& info) {
         }
 
         if (match) {
+            Napi::Object result = Napi::Object::New(env);
+            result.Set("index", Napi::Number::New(env, i));
+
             Napi::Object record = Napi::Object::New(env);
             for (size_t j = 0; j < this->field_definitions.size(); j++) {
                 record.Set(this->field_definitions[j].first,
                            FieldValueToNapi(env, this->records[i][j]));
             }
-            results.Set(result_count++, record);
+            result.Set("value", record);
+
+            results.Set(result_count++, result);
         }
     }
 

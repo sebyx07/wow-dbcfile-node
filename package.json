@@ -1,6 +1,6 @@
 {
   "name": "wow-dbcfile-node",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Node.js module for working with World of Warcraft DBC files",
   "main": "src/index.js",
   "type": "module",

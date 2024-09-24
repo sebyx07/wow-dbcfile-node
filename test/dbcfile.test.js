@@ -96,7 +96,7 @@ describe('WoWDBCFile', function() {
       const sampleModelName = dbcFile.getRecord(0).model_name_1;
       const results = dbcFile.findBy('model_name_1', sampleModelName);
       expect(results).to.not.be.empty;
-      expect(results[0].model_name_1).to.equal(sampleModelName);
+      expect(results[0].value.model_name_1).to.equal(sampleModelName);
     });
   });
 
